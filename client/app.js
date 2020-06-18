@@ -1,3 +1,6 @@
+const $changeStatusSelect = document.querySelector('select');
+const $onlineUsersTitle = document.querySelector('#onlineUsers');
+const $usersListContainer = document.querySelector('.list');
 const $alert = document.querySelector("p[class*=alert]");
 const $input = document.querySelector("#input-message");
 const $chatContainer = document.querySelector("div[class*=chat-container]");
@@ -5,8 +8,21 @@ const $nicknameForm = document.querySelector("form");
 const $chatForm = document.querySelector("form#chatForm");
 const $messagesContainer = document.querySelector(".messages");
 const socket = io("http://localhost:3000");
+
 let nickName;
 let isTypingTimeout;
+
+socket.on("clientsList", (clients) => {
+  $usersListContainer.innerHTML = '';
+  $onlineUsersTitle.innerHTML = `Usuários online - ${clients.length}`
+  clients.forEach((client) => {
+    const $li = document.createElement('li');
+    $li.textContent = client.nickname;
+    $li.setAttribute('data-id', client.id);
+    $li.setAttribute('class', client.status);
+    $usersListContainer.appendChild($li);
+  });
+});
 
 socket.on("userIsTyping", (event) => {
   const { userIsTyping } = event;
@@ -14,6 +30,7 @@ socket.on("userIsTyping", (event) => {
   if (userIsTyping) {
     return $alert.classList.add("show");
   }
+
   $alert.classList.remove("show");
 });
 
@@ -25,7 +42,6 @@ socket.on("register", (nickname) => {
 
 socket.on("message", (msg) => {
   const { text, author, time, socketId } = msg;
-  // VERIFICANDO SE É A MINHA MENSAGEM
   const self = socketId === socket.id;
   const $message = document.createElement("div");
   $message.setAttribute("class", `${self ? "wrapper self" : "wrapper"}`);
@@ -39,6 +55,7 @@ socket.on("message", (msg) => {
         </div>
 `;
   $messagesContainer.appendChild($message);
+  $messagesContainer.scrollTop = $messagesContainer.scrollHeight + $messagesContainer.scrollTop;
 });
 
 const submitMessage = (e) => {
@@ -58,6 +75,7 @@ const submitMessage = (e) => {
   });
   $input.value = "";
 };
+
 const submitNickname = (e) => {
   e.preventDefault();
   const $container = document.querySelector(".container-nickname");
@@ -80,6 +98,16 @@ const onInputCallback = (e) => {
   }, 5000);
 };
 
+const selectCallback = (e) => {
+  const $select = e.target;
+  const value = $select.value;
+  socket.emit("statusChange", {
+    status: value,
+    id: socket.id,
+  });
+};
+
+$changeStatusSelect.addEventListener('change', selectCallback);
 $input.addEventListener("input", onInputCallback);
 $chatForm.addEventListener("submit", submitMessage);
 $nicknameForm.addEventListener("submit", submitNickname);
