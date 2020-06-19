@@ -7,6 +7,7 @@
   <title>Chat</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
     integrity="sha256-bQmrZe4yPnQrLTY+1gYylfNMBuGfnT/HKsCGX+9Xuqo=" crossorigin="anonymous"></script>
+  <script src="./sw.js"></script>
   <script src="./app.js" defer async></script>
   <link rel="stylesheet" href="./assets/styles/reset.css" />
   <link rel="stylesheet" href="./assets/styles/style.css" />
@@ -36,10 +37,12 @@
             <option value="away">Ausente</option>
           </select>
         </div>
+        <div class="room-name" data-selected="true">
+          <h2>Sala pública</h2>
+        </div>
         <div class="online-users">
           <h2 id="onlineUsers"></h2>
           <ul class="list">
-
           </ul>
         </div>
       </div>
@@ -47,7 +50,7 @@
         <div class="messages"></div>
         <p class="alert"></p>
         <form id="chatForm">
-          <input type="text" id="input-message" placeholder="Digite sua mensagem" />
+          <input type="text" id="input-message" placeholder="Digite sua mensagem" maxlength="140" />
           <button type="submit">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g id="arrow_forward_24px">

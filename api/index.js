@@ -2,41 +2,34 @@ const app = require("express")();
 const http = require("http").createServer(app);
 // instancia no servidor
 const io = require("socket.io")(http);
-let messages = {};
+
+let publicMessages = {};
+publicMessages.messages = [];
 let clients = [];
 // CONEXÃO ESTABELECIDA
 io.on("connection", (socket) => {
   socket.on("register", (nickname) => {
     socket.nickname = nickname;
     socket.emit("register", nickname);
+    socket.join('public');
     clients.push({
       nickname,
       id: socket.id,
-      status: 'online'
+      status: 'online',
     });
 
-    io.emit("clientsList", clients);
-  });
-
-  socket.on("oldMessages", (id) => {
-    socket.emit("oldMessages", messages[id] || []);
-  });
-
-  socket.on("privateMessage", (msg) => {
-    messages[msg.to] = [];
-    const index = messages[msg.to];
-    index.push(msg);
-    messages[msg.to] = index;
-    socket.join(msg.to);
-    io.to(msg.to).emit('privateMessage', { ...msg, socketId: socket.id, })
-
+    io.to('public').emit("clientsList", clients);
+    io.to('public').emit("oldMesssages", publicMessages.messages);
   });
 
   socket.on("message", (msg) => {
-    io.emit("message", {
+    const messageObj = {
       ...msg,
       socketId: socket.id,
-    });
+    };
+
+    publicMessages.messages.push(messageObj)
+    socket.broadcast.to('public').emit("message", messageObj);
   });
 
   socket.on("userIsTyping", (userIsTyping) => {
@@ -54,12 +47,12 @@ io.on("connection", (socket) => {
       status: data.status,
     };
 
-    io.emit("clientsList", clients);
+    io.to('public').emit("clientsList", clients);
   });
 
   socket.on("disconnect", () => {
     clients = clients.filter((client) => client.nickname != socket.nickname);
-    io.emit('clientsList', clients);
+    io.to('public').emit('clientsList', clients);
   });
 });
 

@@ -7,13 +7,40 @@ const $chatContainer = document.querySelector("div[class*=chat-container]");
 const $nicknameForm = document.querySelector("form");
 const $chatForm = document.querySelector("form#chatForm");
 const $messagesContainer = document.querySelector(".messages");
-const socket = io("https://frozen-garden-20540.herokuapp.com");
+const socket = io("http://localhost:3000");
 
 let nickName;
 let isTypingTimeout;
+let onlineUsers = [];
+
+const showNotification = async (message) => {
+  const serviceWorker = await navigator.serviceWorker.getRegistration();
+  const options = {
+    body: `${message.author}: ${message.text}`
+  }
+  return serviceWorker.showNotification('Nova mensagem', options);
+};
+
+const renderMessage = (msg) => {
+  const { text, author, time, socketId } = msg;
+  const self = socketId === socket.id;
+  const $message = document.createElement("div");
+  $message.setAttribute("class", `${self ? "wrapper self" : "wrapper"}`);
+  $message.innerHTML = `
+        <div class="${self ? 'message self' : 'message'}">
+            <p>${text}</p>
+            <div class="info">
+                <time>${time}</time>
+                <span>${self ? '' : author}</span>
+            </div>
+        </div>
+`;
+  $messagesContainer.appendChild($message);
+  $messagesContainer.scrollTop = $messagesContainer.scrollHeight + $messagesContainer.scrollTop;
+};
 
 socket.on("clientsList", (clients) => {
-  console.log("oi", clients)
+  onlineUsers = clients;
   $usersListContainer.innerHTML = '';
   $onlineUsersTitle.innerHTML = `Usuários online - ${clients.length}`
   clients.forEach((client) => {
@@ -42,22 +69,14 @@ socket.on("register", (nickname) => {
 });
 
 socket.on("message", (msg) => {
-  const { text, author, time, socketId } = msg;
-  const self = socketId === socket.id;
-  const $message = document.createElement("div");
-  $message.setAttribute("class", `${self ? "wrapper self" : "wrapper"}`);
-  $message.innerHTML = `
-        <div class="${self ? 'message self' : 'message'}">
-            <p>${text}</p>
-            <div class="info">
-                <span>${time}</span>
-                <time>${self ? '' : author}</time>
-            </div>
-        </div>
-`;
-  $messagesContainer.appendChild($message);
-  $messagesContainer.scrollTop = $messagesContainer.scrollHeight + $messagesContainer.scrollTop;
+  const actualUser = onlineUsers.find((user) => user.id === socket.id);
+  renderMessage(msg);
+  if (actualUser.status === 'online') {
+    return showNotification(msg);
+  }
 });
+socket.on("oldMesssages", (messages) => messages.map(renderMessage));
+
 
 const submitMessage = (e) => {
   e.preventDefault();
@@ -65,16 +84,24 @@ const submitMessage = (e) => {
     return alert("Você precisa inserir uma mensagem");
   }
 
+  if ($input.value.length > 140) {
+    return alert("A sua mensagem é muito longa.");
+  }
+
   const date = new Date();
   const hour = date.getHours();
   const minutes = date.getMinutes();
-  socket.emit("userIsTyping", false);
-  socket.emit("message", {
+  const message = {
     text: $input.value,
     time: `${hour}:${minutes}`,
     author: nickName,
-  });
+    socketId: socket.id,
+  };
+
+  socket.emit("userIsTyping", false);
+  socket.emit("message", message);
   $input.value = "";
+  renderMessage(message);
 };
 
 const submitNickname = (e) => {
