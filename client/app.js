@@ -7,12 +7,13 @@ const $chatContainer = document.querySelector("div[class*=chat-container]");
 const $nicknameForm = document.querySelector("form");
 const $chatForm = document.querySelector("form#chatForm");
 const $messagesContainer = document.querySelector(".messages");
-const socket = io("http://localhost:3000");
+const socket = io("https://frozen-garden-20540.herokuapp.com");
 
 let nickName;
 let isTypingTimeout;
 
 socket.on("clientsList", (clients) => {
+  console.log("oi", clients)
   $usersListContainer.innerHTML = '';
   $onlineUsersTitle.innerHTML = `Usuários online - ${clients.length}`
   clients.forEach((client) => {
