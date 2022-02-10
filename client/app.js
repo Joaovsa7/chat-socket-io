@@ -101,7 +101,6 @@ const submitMessage = (e) => {
   socket.emit("userIsTyping", false);
   socket.emit("message", message);
   $input.value = "";
-  renderMessage(message);
 };
 
 const submitNickname = (e) => {
