@@ -15,6 +15,11 @@ let onlineUsers = [];
 
 const showNotification = async (message) => {
   const serviceWorker = await navigator.serviceWorker.getRegistration();
+  const self = message.socketId === socket.id;
+  if (self) {
+    return null
+  }
+
   const options = {
     body: `${message.author}: ${message.text}`
   }
