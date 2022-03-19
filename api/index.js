@@ -6,12 +6,13 @@ const io = require("socket.io")(http);
 let publicMessages = {};
 publicMessages.messages = [];
 let clients = [];
-// CONEXÃO ESTABELECIDA
+
 io.on("connection", (socket) => {
   socket.on("register", (nickname) => {
     socket.nickname = nickname;
     socket.emit("register", nickname);
     socket.join('public');
+
     clients.push({
       nickname,
       id: socket.id,
@@ -19,7 +20,7 @@ io.on("connection", (socket) => {
     });
 
     io.to('public').emit("clientsList", clients);
-    io.to('public').emit("oldMesssages", publicMessages.messages);
+    io.to('public').emit("oldMessages", publicMessages.messages);
   });
 
   socket.on("message", (msg) => {

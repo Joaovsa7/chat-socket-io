@@ -80,7 +80,10 @@ socket.on("message", (msg) => {
     return showNotification(msg);
   }
 });
-socket.on("oldMesssages", (messages) => messages.map(renderMessage));
+
+socket.on("oldMessages", (messages) => {
+  return messages.map(renderMessage)
+});
 
 
 const submitMessage = (e) => {
